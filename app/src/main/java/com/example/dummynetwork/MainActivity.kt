@@ -1,11 +1,15 @@
 package com.example.dummynetwork
 
 import android.Manifest
+import android.app.AlertDialog
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.location.LocationManager
 import android.net.wifi.WifiManager
 import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -19,7 +23,52 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         wifiManager = this.applicationContext.getSystemService(WIFI_SERVICE) as WifiManager
-        askAndStartScanWifi()
+        locationEnabled()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // put your code here...
+        location()
+    }
+
+    private fun location() {
+        val lm = getSystemService(LOCATION_SERVICE) as LocationManager
+        val gps_enabled: Boolean
+        val network_enabled: Boolean
+        gps_enabled = lm.isProviderEnabled(LocationManager.GPS_PROVIDER)
+        network_enabled = lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
+        if (gps_enabled && network_enabled) {
+            askAndStartScanWifi()
+        }
+    }
+
+    private fun locationEnabled() {
+        val lm = getSystemService(LOCATION_SERVICE) as LocationManager
+        var gps_enabled = false
+        var network_enabled = false
+        try {
+            gps_enabled = lm.isProviderEnabled(LocationManager.GPS_PROVIDER)
+            Log.d("-----------", "---------$gps_enabled")
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        try {
+            network_enabled = lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        if (gps_enabled && network_enabled) {
+            askAndStartScanWifi()
+        } else {
+            AlertDialog.Builder(this)
+                .setMessage("Turn on your LOCATION services")
+                .setPositiveButton(
+                    "Settings"
+                ) { paramDialogInterface, paramInt -> startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)) }
+                .setNegativeButton("Cancel", null)
+                .show()
+        }
     }
 
     private fun askAndStartScanWifi() {
@@ -97,12 +146,12 @@ class MainActivity : AppCompatActivity() {
         val list = wifiManager!!.scanResults
         for (i in list.indices) {
             if (value1.equals(list[i].SSID)) {
-//                Log.d("The SSID id :", wifiManager!!.getScanResults().get(i).SSID);
-//                Toast.makeText(this@MainActivity, "SSID:" + list[i].SSID, Toast.LENGTH_SHORT).show()
-//                Log.d("The network Type is : ", wifiManager!!.getScanResults().get(i).capabilities);
+                Log.d("The SSID id :", wifiManager!!.getScanResults().get(i).SSID);
+                Toast.makeText(this@MainActivity, "SSID:" + list[i].SSID, Toast.LENGTH_SHORT).show()
+                Log.d("The network Type is : ", wifiManager!!.getScanResults().get(i).capabilities);
                 networkType = list[i].capabilities
                 //Log.d("The network Type is : ", NetworkType);
-//                Toast.makeText(this@MainActivity, "Network type is:" + list[i].capabilities, Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@MainActivity, "Network type is:" + list[i].capabilities, Toast.LENGTH_SHORT).show()
             }
         }
         return networkType

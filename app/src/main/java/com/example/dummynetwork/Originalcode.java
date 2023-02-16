@@ -1,12 +1,17 @@
 package com.example.dummynetwork;
 
 import android.Manifest;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.location.LocationManager;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.util.Log;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
@@ -26,11 +31,62 @@ public class Originalcode extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         this.wifiManager = (WifiManager) this.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
-        askAndStartScanWifi();
+        locationEnabled();
+    }
+    @Override
+    public void onResume(){
+        super.onResume();
+        // put your code here...
+        location();
+    }
+
+    private void location () {
+        LocationManager lm = (LocationManager) getSystemService(Context. LOCATION_SERVICE ) ;
+        boolean gps_enabled;
+        boolean network_enabled;
+        gps_enabled = lm.isProviderEnabled(LocationManager. GPS_PROVIDER ) ;
+        network_enabled = lm.isProviderEnabled(LocationManager. NETWORK_PROVIDER ) ;
+        if (gps_enabled && network_enabled) {
+            askAndStartScanWifi();
+        }
+    }
+
+    private void locationEnabled() {
+        LocationManager lm = (LocationManager)
+                getSystemService(Context. LOCATION_SERVICE ) ;
+        boolean gps_enabled = false;
+        boolean network_enabled = false;
+        try {
+            gps_enabled = lm.isProviderEnabled(LocationManager. GPS_PROVIDER ) ;
+            Log.d("-----------","---------"+gps_enabled);
+        } catch (Exception e) {
+            e.printStackTrace() ;
+        }
+        try {
+            network_enabled = lm.isProviderEnabled(LocationManager. NETWORK_PROVIDER ) ;
+        } catch (Exception e) {
+            e.printStackTrace() ;
+        }
+        if(gps_enabled && network_enabled){
+            askAndStartScanWifi();
+        }
+        else{
+            new AlertDialog.Builder(this )
+                    .setMessage( "Turn on your LOCATION services" )
+                    .setPositiveButton( "Settings" , new
+                            DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick (DialogInterface paramDialogInterface , int paramInt) {
+                                    startActivity( new Intent(Settings. ACTION_LOCATION_SOURCE_SETTINGS )) ;
+                                }
+                            })
+                    .setNegativeButton( "Cancel" , null )
+                    .show() ;
+        }
     }
 
     private void askAndStartScanWifi() {
-
+//        locationEnabled();
         // With Android Level >= 23, you have to ask the user
         // for permission to Call.
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) { // 23
@@ -59,7 +115,6 @@ public class Originalcode extends AppCompatActivity {
         WifiManager wifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
         WifiInfo wifiInfo = wifiManager.getConnectionInfo();
         String ssid = wifiInfo.getSSID();
-        Log.d("-----------------", ssid);
         showNetworksDetails(ssid);
     }
 
@@ -98,12 +153,12 @@ public class Originalcode extends AppCompatActivity {
         List<ScanResult> list = wifiManager.getScanResults();
         for (int i = 0; i < list.size(); i++){
             if (value1.equals(list.get(i).SSID)) {
-//                Log.d("The SSID id :", wifiManager.getScanResults().get(i).SSID);
+                Log.d("The SSID id :", wifiManager.getScanResults().get(i).SSID);
                 Toast.makeText(Originalcode.this, "SSID:" + list.get(i).SSID, Toast.LENGTH_SHORT).show();
-//                Log.d("The network Type is : ", wifiManager.getScanResults().get(i).capabilities);
+                Log.d("The network Type is : ", list.get(i).capabilities);
                 NetworkType = list.get(i).capabilities;
 //                Log.d("The network Type is : ", NetworkType);
-                Toast.makeText(Originalcode.this, "SSID:" + list.get(i).capabilities, Toast.LENGTH_SHORT).show();
+                Toast.makeText(Originalcode.this, "The Network Type is :" + list.get(i).capabilities, Toast.LENGTH_SHORT).show();
             }
         }
         Log.d("The network Type is : ", NetworkType);
