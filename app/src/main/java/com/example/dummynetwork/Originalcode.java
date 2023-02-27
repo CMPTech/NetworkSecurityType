@@ -25,6 +25,7 @@ public class Originalcode extends AppCompatActivity {
     private static final String LOG_TAG = "AndroidExample";
     private static final int MY_REQUEST_CODE = 123;
     private WifiManager wifiManager;
+    String NetworkType = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -85,7 +86,7 @@ public class Originalcode extends AppCompatActivity {
         }
     }
 
-    private void askAndStartScanWifi() {
+    private void askAndStartScanWifi(){
 //        locationEnabled();
         // With Android Level >= 23, you have to ask the user
         // for permission to Call.
@@ -102,6 +103,7 @@ public class Originalcode extends AppCompatActivity {
                                 Manifest.permission.ACCESS_WIFI_STATE,
                                 Manifest.permission.ACCESS_NETWORK_STATE
                         }, MY_REQUEST_CODE);
+                this.doStartScanWifi(this);
                 return;
             }
             Log.d(LOG_TAG, "Permissions Already Granted");
@@ -126,20 +128,16 @@ public class Originalcode extends AppCompatActivity {
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     // permission was granted
                     Log.d(LOG_TAG, "Permission Granted: " + permissions[0]);
-                    // Start Scan Wifi.
-                    this.doStartScanWifi(this);
                 } else {
-                    Log.d(LOG_TAG, "Permission Denied: " + permissions[0]);
+//                    Log.d(LOG_TAG, "Permission Denied: " + permissions[0]);
                 }
                 break;
             }
         }
     }
 
-    private String showNetworksDetails(String value) {
-
+    private void showNetworksDetails(String value){
         String value1 =value.replace("\"","");
-        String NetworkType = "";
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             // TODO: Consider calling
             //    ActivityCompat#requestPermissions
@@ -148,20 +146,32 @@ public class Originalcode extends AppCompatActivity {
             //                                          int[] grantResults)
             // to handle the case where the user grants the permission. See the documentation
             // for ActivityCompat#requestPermissions for more details.
-            return value1;
+//            return value1;
         }
         List<ScanResult> list = wifiManager.getScanResults();
         for (int i = 0; i < list.size(); i++){
             if (value1.equals(list.get(i).SSID)) {
-                Log.d("The SSID id :", wifiManager.getScanResults().get(i).SSID);
-                Toast.makeText(Originalcode.this, "SSID:" + list.get(i).SSID, Toast.LENGTH_SHORT).show();
+                Log.d("The SSID id :", list.get(i).SSID);
                 Log.d("The network Type is : ", list.get(i).capabilities);
                 NetworkType = list.get(i).capabilities;
-//                Log.d("The network Type is : ", NetworkType);
-                Toast.makeText(Originalcode.this, "The Network Type is :" + list.get(i).capabilities, Toast.LENGTH_SHORT).show();
+                if(NetworkType.contains("WPA2") || NetworkType.contains("WPA")){
+                    Toast.makeText(Originalcode.this, "The Network Type is secured" , Toast.LENGTH_SHORT).show();
+                    return;
+                }else{
+                    AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                    builder.setMessage("Open Network detected. For Security reasons the app will not proceed.");
+                    builder.setTitle("Alert !");
+                    builder.setCancelable(false);
+                    builder.setPositiveButton("OK", (DialogInterface.OnClickListener) (dialog, which) -> {
+                        finish();
+                        android.os.Process.killProcess(android.os.Process.myPid());
+
+                    });
+                    AlertDialog alertDialog = builder.create();
+                    alertDialog.show();
+                    return;
+                }
             }
         }
-        Log.d("The network Type is : ", NetworkType);
-        return NetworkType;
     }
 }
